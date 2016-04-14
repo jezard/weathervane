@@ -1,0 +1,19 @@
+/**
+* file: weathervane.conf.go
+**/
+
+package conf
+
+type Conf struct{
+	MOApiKey string
+}
+
+// weather codes
+// http://www.metoffice.gov.uk/datapoint/support/documentation/code-definitions#
+
+
+func Get() Conf{
+	var c Conf
+	c.MOApiKey = "########-####-####-####-############" //Met Office API KEY
+	return c
+}
