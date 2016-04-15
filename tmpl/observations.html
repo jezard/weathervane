@@ -1,0 +1,31 @@
+<html>
+<body>
+<h1>Data</h1>
+{{ if .Cached}}
+	<h2>Cached</h2>
+{{else}}
+	<h2>Not Cached</h2>
+{{end}}
+
+{{range $meta := .Meta}}
+	{{$meta.Name}} {{$meta.Unit}}<br>
+{{end}}
+
+{{range $data := .Data}}
+	{{$data.SiteRep.DV.DataDate }}<br><br>
+
+	{{range $locations := $data.SiteRep.DV.Location}}
+		{{$locations.Name }}<br>
+		{{$locations.Elevation }}<br>
+		{{$locations.Period.Rep.D }}<br>
+		{{$locations.Period.Rep.H }}<br>
+		{{$locations.Period.Rep.P }}<br>
+		{{$locations.Period.Rep.S }}<br>
+		{{$locations.Period.Rep.T }}<br>
+		{{$locations.Period.Rep.W }}<br>
+		{{$locations.Period.Rep.Pt }}<br>
+		{{$locations.Period.Rep.Dp }}<hr>
+	{{end}}
+{{end}}
+</body>
+</html>

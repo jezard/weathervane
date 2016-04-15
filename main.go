@@ -17,6 +17,7 @@ import (
 	"io/ioutil"
 	"encoding/json"
 	"time"
+	"html/template"
 )
 
 //capabilities
@@ -72,6 +73,19 @@ type Wxobs struct {
 	} `json:"SiteRep"`
 }
 
+type Param struct{
+	Name, Unit string
+}
+
+type ObservationPage struct{
+	Meta []Param
+	Data []Wxobs
+	Cached bool
+}
+
+var labels []Param 	// METADATA		our parameter name and units
+var obs []Wxobs 	// DATA			stores all of our observations
+
 func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", HomeHandler)
@@ -79,22 +93,43 @@ func main() {
 	http.ListenAndServe(":8080", nil) //local: http://192.168.2.100:8080/
 }
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	var obs []Wxobs //stores all of our observations
-	caps := getCapabilities()
+	var P ObservationPage
+	P.Cached = true
+	
+	if len(labels) == 0 {
+		P.Cached = false
 
-	for _, capability := range caps{
-		f := "2006-01-02T15Z"
-		s := capability.UTC().Format(f) 
-		o := getObservations(s)
+		caps := getCapabilities()
 
-		obs = append(obs, o)
-	}
+		for _, capability := range caps{
+			f := "2006-01-02T15Z"
+			s := capability.UTC().Format(f) 
+			o := getObservations(s)
 
-	for _, ob := range obs{//test to loop through all observations
-		for i, loc := range ob.SiteRep.DV.Location{
-			fmt.Printf("%d %s %s\n", i, loc.Name,  loc.Elevation)//get any location attribute 
+			obs = append(obs, o)
+		}
+
+		for _, ob := range obs{//test to loop through all observations
+			var label Param
+		
+			for _, param := range ob.SiteRep.Wx.Param{
+				label.Name = param.Name
+				label.Unit = param.Units
+				labels = append(labels, label)
+
+				//fmt.Printf("%d %s %s\n", i, param.Name,  param.Units)//get params
+			}
+			for i, loc := range ob.SiteRep.DV.Location{
+				fmt.Printf("%d %s %s wind:%s\n", i, loc.Name,  loc.Elevation, loc.Period.Rep.D)//get any location attribute 
+			}
 		}
 	}
+
+	P.Meta = labels
+	P.Data = obs
+
+	t, _ := template.ParseFiles("/vagrant/workspace/src/github.com/jezard/weathervane/tmpl/observations.html")
+	t.Execute(w, P)
 }
 
 //returns array of available capabilities
