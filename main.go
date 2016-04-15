@@ -1,3 +1,12 @@
+/****
+*
+*  Package to create a simple UK weather observation page/site - the aim being to disregard inaccurate forecasts and allow our brains to extrapolate where and when the rain will fall
+* 
+*  Thanks to Met Office http://www.metoffice.gov.uk/ for their DataPoint feeds
+*  Thanks to Matt Holt https://mholt.github.io/json-to-go/ for his JSON-to-go JSON to Go struct generator...
+*
+****/
+
 package main
 
 import (
@@ -10,6 +19,18 @@ import (
 	"time"
 )
 
+//capabilities
+type Wxcaps struct {
+	Resource struct {
+		Res string `json:"res"`
+		Type string `json:"type"`
+		TimeSteps struct {
+			TS []time.Time `json:"TS"`
+		} `json:"TimeSteps"`
+	} `json:"Resource"`
+}
+
+//observations
 type Wxobs struct {
 	SiteRep struct {
 		Wx struct {
@@ -58,10 +79,62 @@ func main() {
 	http.ListenAndServe(":8080", nil) //local: http://192.168.2.100:8080/
 }
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
+	var obs []Wxobs //stores all of our observations
+	caps := getCapabilities()
+
+	for _, capability := range caps{
+		f := "2006-01-02T15Z"
+		s := capability.UTC().Format(f) 
+		o := getObservations(s)
+
+		obs = append(obs, o)
+	}
+
+	for _, ob := range obs{//test to loop through all observations
+		for i, loc := range ob.SiteRep.DV.Location{
+			fmt.Printf("%d %s %s\n", i, loc.Name,  loc.Elevation)//get any location attribute 
+		}
+	}
+}
+
+//returns array of available capabilities
+func getCapabilities()[]time.Time{
 	conf := conf.Get()
 
-	
-	url := "http://datapoint.metoffice.gov.uk/public/data/val/wxobs/all/json/all?res=hourly&time=2016-04-14T15Z&key=" + conf.MOApiKey;//date needs manually updating for this stub, re-read the sections about all this (Met Office docs)
+	var c []time.Time
+
+	//get the capabilities for the UK observations data feed
+	url := "http://datapoint.metoffice.gov.uk/public/data/val/wxobs/all/json/capabilities?res=hourly&key=" + conf.MOApiKey;
+
+	resp, err := http.Get(url)
+	if err != nil{
+		fmt.Printf("%v", err)
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+	    panic(err.Error())
+	}
+
+	var data Wxcaps
+
+	json.Unmarshal(body, &data)
+
+	for _, capability := range data.Resource.TimeSteps.TS{
+		c = append(c, capability)	
+	}
+	return c
+}
+
+//returns observation data for a single capability
+func getObservations(snapshot string)Wxobs{
+	conf := conf.Get()
+
+	//get the UK observations data feed
+	url := "http://datapoint.metoffice.gov.uk/public/data/val/wxobs/all/json/all?res=hourly&time=" + snapshot + "&key=" + conf.MOApiKey;//date needs manually updating for this stub, re-read the sections about all this (Met Office docs)
+
+	fmt.Printf("%s\n", url)
 
 	resp, err := http.Get(url)
 	if err != nil{
@@ -78,7 +151,8 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	json.Unmarshal(body, &data)
 
-	for i, obs := range data.SiteRep.DV.Location{
-		fmt.Printf("%d %s %s\n", i, obs.Name,  obs.Elevation)//get any location attribute 
-	}
+	return data
 }
+
+
+
