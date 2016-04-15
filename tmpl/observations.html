@@ -7,25 +7,32 @@
 	<h2>Not Cached</h2>
 {{end}}
 
+<script type="text/javascript"> 
+var meta = [];
 {{range $meta := .Meta}}
-	{{$meta.Name}} {{$meta.Unit}}<br>
+		//note to self: just playing around with this - needs some work...
+		meta.push({name: "{{$meta.Name}}", unit:"{{$meta.Unit}}"});
 {{end}}
+console.log(meta);
+</script>
 
 {{range $data := .Data}}
-	{{$data.SiteRep.DV.DataDate }}<br><br>
+	<h3>{{$data.SiteRep.DV.DataDate }}<!-- think this is the wrong value --></h3>
 
 	{{range $locations := $data.SiteRep.DV.Location}}
-		{{$locations.Name }}<br>
-		{{$locations.Elevation }}<br>
-		{{$locations.Period.Rep.D }}<br>
-		{{$locations.Period.Rep.H }}<br>
-		{{$locations.Period.Rep.P }}<br>
-		{{$locations.Period.Rep.S }}<br>
-		{{$locations.Period.Rep.T }}<br>
-		{{$locations.Period.Rep.W }}<br>
-		{{$locations.Period.Rep.Pt }}<br>
-		{{$locations.Period.Rep.Dp }}<hr>
+		<h4>{{ $locations.Name }}</h4>
+		<pre>Lat: {{ $locations.Lat }},      Lon: {{ $locations.Lon }}</pre>
+		{{ $locations.Elevation }}<br>
+		{{ $locations.Period.Rep.D }}<br>
+		{{ $locations.Period.Rep.H }}<br>
+		{{ $locations.Period.Rep.P }}<br>
+		{{ $locations.Period.Rep.S }}<br>
+		{{ $locations.Period.Rep.T }}<br>
+		{{ $locations.Period.Rep.W }}<br>
+		{{ $locations.Period.Rep.Pt }}<br>
+		{{ $locations.Period.Rep.Dp }}<hr>
 	{{end}}
+
 {{end}}
 </body>
 </html>
